@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 from numpy import exp
 
@@ -26,8 +27,14 @@ def solve_ddp(
     new_phi_n = np.zeros(node_num)
     new_phi_p = np.zeros(node_num)
 
-    error = float("-inf")
+    error = float("inf")
+    print(error)
+    i = 1
     while error > tol:
+        plot(x, prev_phi_n, "phi_n", f"res/phi_n_{i}.png")
+        plot(x, prev_phi_p, "phi_p", f"res/phi_p_{i}.png")
+        plot(x, prev_psi, "psi", f"res/psi_{i}.png")
+
         new_psi, err_psi = solve_poisson(x, prev_psi, prev_phi_n, prev_phi_p, impurity)
 
         S = 1 / (
@@ -45,6 +52,8 @@ def solve_ddp(
 
         error = np.max([err_psi, err_phi_n, err_phi_p])
         prev_psi, prev_phi_n, prev_phi_p = new_psi, new_phi_n, new_phi_p
+
+        i += 1
 
     return new_psi, new_phi_n, new_phi_p
 
@@ -122,10 +131,11 @@ def solve_poisson(
         )
 
     sigma = solve_differential_equation(x, k, q, f)
-    if abs(sigma) > 3.7:
-        sigma = np.sign(sigma) * np.log(abs(sigma))
-    elif abs(sigma) > 1:
-        sigma = np.sign(sigma) * (abs(sigma) ** 0.2)
+    for j in range(node_num):
+        if abs(sigma[j]) > 3.7:
+            sigma[j] = np.sign(sigma[j]) * np.log(abs(sigma[j]))
+        elif abs(sigma[j]) > 1:
+            sigma[j] = np.sign(sigma[j]) * (abs(sigma[j]) ** 0.2)
 
     new_psi = psi_0 + sigma
     err = np.linalg.norm(new_psi - psi_0)
@@ -177,3 +187,13 @@ def solve_tridiagonal_system(
     for i in range(n - 2, -1, -1):
         y[i] = d[i] - b[i] * y[i + 1]
     return np.array(y)
+
+
+def plot(x, y, y_label, fname):
+    plt.figure()
+    plt.plot(x, y)
+    plt.xlabel("x")
+    plt.ylabel(y_label)
+    plt.grid(True)
+    plt.savefig(fname)
+    plt.close()
