@@ -28,7 +28,6 @@ def solve_ddp(
     new_phi_p = np.zeros(node_num)
 
     error = float("inf")
-    print(error)
     i = 1
     while error > tol:
         plot(x, prev_phi_n, "phi_n", f"res/phi_n_{i}.png")
@@ -56,6 +55,50 @@ def solve_ddp(
         i += 1
 
     return new_psi, new_phi_n, new_phi_p
+
+
+def solve_poisson(
+    x: np.ndarray,
+    psi_0: np.ndarray,
+    phi_n: np.ndarray,
+    phi_p: np.ndarray,
+    impurity: np.ndarray,
+) -> tuple[np.ndarray, np.float_]:
+    node_num = len(x)
+    k = np.ones(node_num)
+
+    q = np.zeros(node_num)
+    for j in range(node_num):
+        q[j] = -(phi_n[j] * exp(psi_0[j]) + phi_p[j] * exp(-psi_0[j]))
+
+    f = np.zeros(node_num)
+    f[0] = 0.0
+    f[-1] = 0.0
+    for j in range(1, node_num - 1):
+        half_h = 0.5 * (x[j + 1] - x[j - 1])
+        f[j] = (
+            phi_n[j] * exp(psi_0[j])
+            - phi_p[j] * exp(-psi_0[j])
+            - (1 / half_h)
+            * (
+                (psi_0[j + 1] - psi_0[j]) / (x[j + 1] - x[j])
+                - (psi_0[j] - psi_0[j - 1]) / (x[j] - x[j - 1])
+            )
+            - impurity[j]
+        )
+
+    sigma = solve_differential_equation(x, k, q, f)
+    for j in range(node_num):
+        if abs(sigma[j]) >= 3.7:
+            sigma[j] = np.sign(sigma[j]) * np.log(abs(sigma[j]))
+        elif abs(sigma[j]) > 1:
+            sigma[j] = np.sign(sigma[j]) * (abs(sigma[j]) ** 0.2)
+
+    new_psi = psi_0 + sigma
+    err = np.linalg.norm(sigma)
+    print(err)
+
+    return new_psi, err
 
 
 def solve_continuity_n(
@@ -100,49 +143,6 @@ def solve_continuity_p(
     return new_phi_p, err
 
 
-def solve_poisson(
-    x: np.ndarray,
-    psi_0: np.ndarray,
-    phi_n: np.ndarray,
-    phi_p: np.ndarray,
-    impurity: np.ndarray,
-) -> tuple[np.ndarray, np.float_]:
-    node_num = len(x)
-    k = np.ones(node_num)
-
-    q = np.zeros(node_num)
-    for j in range(node_num):
-        q[j] = -(phi_n[j] * exp(psi_0[j]) + phi_p[j] * exp(-psi_0[j]))
-
-    f = np.zeros(node_num)
-    f[0] = 0.0
-    f[-1] = 0.0
-    for j in range(1, node_num - 1):
-        half_h = 0.5 * (x[j + 1] - x[j - 1])
-        f[j] = (
-            phi_n[j] * exp(psi_0[j])
-            - phi_p[j] * exp(-psi_0[j])
-            - (1 / half_h)
-            * (
-                (psi_0[j + 1] - psi_0[j]) / (x[j + 1] - x[j])
-                - (psi_0[j] - psi_0[j - 1]) / (x[j] - x[j - 1])
-            )
-            - impurity[j]
-        )
-
-    sigma = solve_differential_equation(x, k, q, f)
-    for j in range(node_num):
-        if abs(sigma[j]) > 3.7:
-            sigma[j] = np.sign(sigma[j]) * np.log(abs(sigma[j]))
-        elif abs(sigma[j]) > 1:
-            sigma[j] = np.sign(sigma[j]) * (abs(sigma[j]) ** 0.2)
-
-    new_psi = psi_0 + sigma
-    err = np.linalg.norm(new_psi - psi_0)
-
-    return new_psi, err
-
-
 def solve_differential_equation(
     x: np.ndarray, k: np.ndarray, q: np.ndarray, f: np.ndarray
 ) -> np.ndarray:
@@ -161,8 +161,8 @@ def solve_differential_equation(
         half_h = 0.5 * (x[j + 1] - x[j - 1])
         a[j] = (0.5 * (k[j] + k[j - 1])) / (half_h * (x[j] - x[j - 1]))
         b[j] = (0.5 * (k[j + 1] + k[j])) / (half_h * (x[j + 1] - x[j]))
-        c[j] = -(a[j] + b[j] + q[j])
-        d[j] = -f[j]
+        c[j] = q[j] - a[j] - b[j]
+        d[j] = f[j]
 
     a[-1] = 0
     c[-1] = 1
