@@ -63,14 +63,14 @@ for j in range(1, node_number - 1):
     psi[j] = psi[j - 1] + d_psi
 
 phi_n = [0.0] * node_number
-phi_n[0] = exp(voltage)
+phi_n[0] = exp(-voltage)
 phi_n[-1] = 1.0
 d_phi_n = (phi_n[-1] - phi_n[0]) / node_number
 for j in range(1, node_number - 1):
     phi_n[j] = phi_n[j - 1] + d_phi_n
 
 phi_p = [0.0] * node_number
-phi_p[0] = exp(-voltage)
+phi_p[0] = exp(voltage)
 phi_p[-1] = 1.0
 d_phi_p = (phi_p[-1] - phi_p[0]) / node_number
 for j in range(1, node_number - 1):

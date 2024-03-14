@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy import exp
+from consts import t_n, t_p, n_1, p_1
 
 
 def solve_ddp(
@@ -12,10 +13,6 @@ def solve_ddp(
     impurity: np.ndarray,
     m_n: np.ndarray,
     m_p: np.ndarray,
-    t_n: np.float_,
-    t_p: np.float_,
-    n_1: np.float_,
-    p_1: np.float_,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     node_num = len(x)
 
@@ -32,17 +29,12 @@ def solve_ddp(
     while error > tol:
         new_psi, err_psi = solve_poisson(x, prev_psi, prev_phi_n, prev_phi_p, impurity)
 
-        S = 1 / (
-            t_n * (prev_phi_p * np.exp(-new_psi) + p_1)
-            + t_p * (prev_phi_n * np.exp(new_psi) + n_1)
-        )
-
         new_phi_n, err_phi_n = solve_continuity_n(
-            x, prev_phi_n, new_psi, m_n, prev_phi_p, S
+            x, prev_phi_n, new_psi, m_n, prev_phi_p
         )
 
         new_phi_p, err_phi_p = solve_continuity_p(
-            x, prev_phi_p, new_psi, m_p, new_phi_n, S
+            x, prev_phi_p, new_psi, m_p, new_phi_n
         )
 
         error = np.max([err_psi, err_phi_n, err_phi_p])
@@ -92,9 +84,13 @@ def solve_poisson(
 
     new_psi = psi_0 + sigma
     err = np.linalg.norm(sigma)
-    # print(f"poisson {err}")
+    print(f"poisson {err}")
 
     return new_psi, err
+
+
+def get_s(psi: np.ndarray, phi_n: np.ndarray, phi_p: np.ndarray) -> np.ndarray:
+    return 1 / (t_n * (phi_p * np.exp(-psi) + p_1) + t_p * (phi_n * np.exp(psi) + n_1))
 
 
 def solve_continuity_n(
@@ -103,7 +99,6 @@ def solve_continuity_n(
     psi: np.ndarray,
     m_n: np.ndarray,
     phi_p: np.ndarray,
-    S: np.ndarray,
 ) -> tuple[np.ndarray, np.float_]:
     node_num = len(x)
     k = np.zeros(node_num)
@@ -112,12 +107,13 @@ def solve_continuity_n(
     f[0] = phi_n_0[0]
     f[-1] = phi_n_0[-1]
     for j in range(1, node_num - 1):
+        s = get_s(psi, phi_n_0, phi_p)
         k[j] = m_n[j] * exp(psi[j])
-        q[j] = -(phi_p[j] * S[j])
-        f[j] = -S[j]
+        q[j] = -(phi_p[j] * s[j])
+        f[j] = -s[j]
     new_phi_n = solve_differential_equation(x, k, q, f)
     err = np.linalg.norm(new_phi_n - phi_n_0)
-    # print(f"n_continuity {err}")
+    print(f"n_continuity {err}")
     return new_phi_n, err
 
 
@@ -127,7 +123,6 @@ def solve_continuity_p(
     psi: np.ndarray,
     m_p: np.ndarray,
     phi_n: np.ndarray,
-    S: np.ndarray,
 ) -> tuple[np.ndarray, np.float_]:
     node_num = len(x)
     k = np.ones(node_num)
@@ -136,12 +131,13 @@ def solve_continuity_p(
     f[0] = phi_p_0[0]
     f[-1] = phi_p_0[-1]
     for j in range(1, node_num - 1):
+        s = get_s(psi, phi_n, phi_p_0)
         k[j] = m_p[j] * exp(-psi[j])
-        q[j] = -(phi_n[j] * S[j])
-        f[j] = -S[j]
+        q[j] = -(phi_n[j] * s[j])
+        f[j] = -s[j]
     new_phi_p = solve_differential_equation(x, k, q, f)
     err = np.linalg.norm(new_phi_p - phi_p_0)
-    # print(f"p_continuity {err}")
+    print(f"p_continuity {err}")
     return new_phi_p, err
 
 
