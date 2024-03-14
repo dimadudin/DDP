@@ -30,10 +30,6 @@ def solve_ddp(
     error = float("inf")
     i = 1
     while error > tol:
-        plot(x, prev_phi_n, "phi_n", f"res/phi_n_{i}.png")
-        plot(x, prev_phi_p, "phi_p", f"res/phi_p_{i}.png")
-        plot(x, prev_psi, "psi", f"res/psi_{i}.png")
-
         new_psi, err_psi = solve_poisson(x, prev_psi, prev_phi_n, prev_phi_p, impurity)
 
         S = 1 / (
@@ -96,7 +92,7 @@ def solve_poisson(
 
     new_psi = psi_0 + sigma
     err = np.linalg.norm(sigma)
-    print(err)
+    # print(f"poisson {err}")
 
     return new_psi, err
 
@@ -113,12 +109,15 @@ def solve_continuity_n(
     k = np.zeros(node_num)
     q = np.zeros(node_num)
     f = np.zeros(node_num)
-    for j in range(node_num):
+    f[0] = phi_n_0[0]
+    f[-1] = phi_n_0[-1]
+    for j in range(1, node_num - 1):
         k[j] = m_n[j] * exp(psi[j])
         q[j] = -(phi_p[j] * S[j])
         f[j] = -S[j]
     new_phi_n = solve_differential_equation(x, k, q, f)
     err = np.linalg.norm(new_phi_n - phi_n_0)
+    # print(f"n_continuity {err}")
     return new_phi_n, err
 
 
@@ -134,12 +133,15 @@ def solve_continuity_p(
     k = np.ones(node_num)
     q = np.zeros(node_num)
     f = np.zeros(node_num)
-    for j in range(node_num):
+    f[0] = phi_p_0[0]
+    f[-1] = phi_p_0[-1]
+    for j in range(1, node_num - 1):
         k[j] = m_p[j] * exp(-psi[j])
         q[j] = -(phi_n[j] * S[j])
         f[j] = -S[j]
     new_phi_p = solve_differential_equation(x, k, q, f)
     err = np.linalg.norm(new_phi_p - phi_p_0)
+    # print(f"p_continuity {err}")
     return new_phi_p, err
 
 

@@ -19,8 +19,8 @@ e_gap = 1.12
 n_c = 3.2e19
 n_v = 1.8e19
 
-n_1 = n_c * exp(-e_gap / (2 * k * t))
-p_1 = n_v * exp(-e_gap / (2 * k * t))
+n_1 = (n_c * exp(-e_gap / (2 * k * t))) / n_i
+p_1 = (n_v * exp(-e_gap / (2 * k * t))) / n_i
 
 O = 0.0 / l_g
 M = 0.3e-4 / l_g
@@ -32,23 +32,12 @@ x = linspace(O, L, node_number)
 n_d = 1e16
 n_a = 1e18
 
-n = [0.0] * node_number
-for j in range(node_number):
-    if x[j] < (M - O):
-        n[j] = 3.61e2
-    else:
-        n[j] = n_d / n_i
-
-p = [0.0] * node_number
-for j in range(node_number):
-    if x[j] < (M - O):
-        p[j] = n_a / n_i
-    else:
-        p[j] = 3.61e4
-
 impurity_func = [0.0] * node_number
 for j in range(node_number):
-    impurity_func[j] = n[j] - p[j]
+    if x[j] < (M - O):
+        impurity_func[j] = -n_a / n_i
+    else:
+        impurity_func[j] = n_d / n_i
 
 m_n = [0.0] * node_number
 for j in range(node_number):
@@ -64,7 +53,7 @@ for j in range(node_number):
     else:
         m_p[j] = 450 / mu_0
 
-voltage = 0.0 / phi_t
+voltage = 0.465 / phi_t
 
 psi = [0.0] * node_number
 psi[0] = log(impurity_func[0] / 2 + sqrt((impurity_func[0] / 2) ** 2 + 1)) + voltage
@@ -76,11 +65,13 @@ for j in range(1, node_number - 1):
 phi_n = [0.0] * node_number
 phi_n[0] = exp(voltage)
 phi_n[-1] = 1.0
+d_phi_n = (phi_n[-1] - phi_n[0]) / node_number
 for j in range(1, node_number - 1):
-    phi_n[j] = n[j] * exp(-psi[j])
+    phi_n[j] = phi_n[j - 1] + d_phi_n
 
 phi_p = [0.0] * node_number
 phi_p[0] = exp(-voltage)
 phi_p[-1] = 1.0
+d_phi_p = (phi_p[-1] - phi_p[0]) / node_number
 for j in range(1, node_number - 1):
-    phi_p[j] = p[j] * exp(psi[j])
+    phi_p[j] = phi_p[j - 1] + d_phi_p
