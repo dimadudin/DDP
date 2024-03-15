@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from numpy import exp
-from consts import t_n, t_p, n_1, p_1
+from consts import t_n, t_p, n_1, p_1, l_g, phi_t, M, n_i, q_e, m_n, m_p
 
 
 def solve_ddp(
@@ -57,7 +56,7 @@ def solve_poisson(
 
     q = np.zeros(node_num)
     for j in range(node_num):
-        q[j] = -(phi_n[j] * exp(psi_0[j]) + phi_p[j] * exp(-psi_0[j]))
+        q[j] = -(phi_n[j] * np.exp(psi_0[j]) + phi_p[j] * np.exp(-psi_0[j]))
 
     f = np.zeros(node_num)
     f[0] = 0.0
@@ -65,8 +64,8 @@ def solve_poisson(
     for j in range(1, node_num - 1):
         half_h = 0.5 * (x[j + 1] - x[j - 1])
         f[j] = (
-            phi_n[j] * exp(psi_0[j])
-            - phi_p[j] * exp(-psi_0[j])
+            phi_n[j] * np.exp(psi_0[j])
+            - phi_p[j] * np.exp(-psi_0[j])
             - (1 / half_h)
             * (
                 (psi_0[j + 1] - psi_0[j]) / (x[j + 1] - x[j])
@@ -115,7 +114,7 @@ def solve_continuity_n(
     while err > tol:
         for j in range(1, node_num - 1):
             s = get_s(psi, prev_phi_n, phi_p)
-            k[j] = m_n[j] * exp(psi[j])
+            k[j] = m_n[j] * np.exp(psi[j])
             q[j] = -(phi_p[j] * s[j])
             f[j] = -s[j]
         new_phi_n = solve_differential_equation(x, k, q, f)
@@ -147,7 +146,7 @@ def solve_continuity_p(
     while err > tol:
         for j in range(1, node_num - 1):
             s = get_s(psi, phi_n, prev_phi_p)
-            k[j] = m_p[j] * exp(-psi[j])
+            k[j] = m_p[j] * np.exp(-psi[j])
             q[j] = -(phi_n[j] * s[j])
             f[j] = -s[j]
         new_phi_p = solve_differential_equation(x, k, q, f)
@@ -203,11 +202,95 @@ def solve_tridiagonal_system(
     return np.array(y)
 
 
-def plot(x, y, y_label, fname):
+def get_pot_phis(psi, phi_n, phi_p):
+    n_psi = phi_t * psi
+    n_phi_n = -phi_t * np.log(phi_n)
+    n_phi_p = phi_t * np.log(phi_p)
+    return n_psi, n_phi_n, n_phi_p
+
+
+def get_densities(psi, phi_n, phi_p):
+    n = n_i * phi_n * np.exp(psi)
+    p = n_i * phi_p * np.exp(-psi)
+    return n, p
+
+
+def get_currents(x, psi, phi_n, phi_p):
+    node_num = len(x)
+
+    n, p = get_densities(psi, phi_n, phi_p)
+    _, n_phi_n, n_phi_p = get_pot_phis(psi, phi_n, phi_p)
+
+    dphi_n = np.zeros(node_num)
+    dphi_p = np.zeros(node_num)
+    for j in range(node_num - 1):
+        h = l_g * (x[j + 1] - x[j])
+        dphi_n[j] = (n_phi_n[j + 1] - n_phi_n[j]) / h
+        dphi_p[j] = (n_phi_p[j + 1] - n_phi_p[j]) / h
+    h = l_g * (x[node_num - 1] - x[node_num - 2])
+    dphi_n[node_num - 1] = (n_phi_n[node_num - 1] - n_phi_n[node_num - 2]) / h
+    dphi_p[node_num - 1] = (n_phi_p[node_num - 1] - n_phi_p[node_num - 2]) / h
+
+    j_n = np.zeros(node_num)
+    j_p = np.zeros(node_num)
+    j_n = -q_e * m_n * n * dphi_n
+    j_p = -q_e * m_p * p * dphi_p
+
+    J = np.zeros(node_num)
+    J = j_n + j_p
+
+    return j_n, j_p, J
+
+
+def plot_potential(x, psi, phi_n, phi_p, fname):
+    n_psi, n_phi_n, n_phi_p = get_pot_phis(psi, phi_n, phi_p)
     plt.figure()
-    plt.plot(x, y)
+    plt.axvline(x=1e4 * l_g * M, color="black", linestyle="dashed")
+    plt.plot(1e4 * l_g * x, n_psi, label=r"$\psi$")
+    plt.plot(1e4 * l_g * x, n_phi_n, label=r"$\phi_n$")
+    plt.plot(1e4 * l_g * x, n_phi_p, label=r"$\phi_p$")
     plt.xlabel("x")
-    plt.ylabel(y_label)
-    plt.grid(True)
+    plt.grid(False)
+    plt.legend()
+    plt.savefig(fname)
+    plt.close()
+
+
+def plot_densities(x, psi, phi_n, phi_p, fname):
+    n, p = get_densities(psi, phi_n, phi_p)
+    plt.figure()
+    plt.axvline(x=1e4 * l_g * M, color="black", linestyle="dashed")
+    plt.plot(1e4 * l_g * x, n, label=r"$n$")
+    plt.plot(1e4 * l_g * x, p, label=r"$p$")
+    plt.xlabel("x")
+    plt.grid(False)
+    plt.legend()
+    plt.savefig(fname)
+    plt.close()
+
+
+def plot_currents(x, psi, phi_n, phi_p, fname):
+    j_n, j_p, J = get_currents(x, psi, phi_n, phi_p)
+    plt.figure()
+    plt.axvline(x=1e4 * l_g * M, color="black", linestyle="dashed")
+    plt.plot(1e4 * l_g * x, j_n, label=r"$j_n$")
+    plt.plot(1e4 * l_g * x, j_p, label=r"$j_p$")
+    # plt.plot(1e4 * l_g * x, J, label=r"$J$")
+    plt.xlabel("x")
+    plt.grid(False)
+    plt.legend()
+    plt.savefig(fname)
+    plt.close()
+
+
+def plot_log_densities(x, psi, phi_n, phi_p, fname):
+    n, p = get_densities(psi, phi_n, phi_p)
+    plt.figure()
+    plt.axvline(x=1e4 * l_g * M, color="black", linestyle="dashed")
+    plt.plot(1e4 * l_g * x, np.log(n), label=r"$log(n)$")
+    plt.plot(1e4 * l_g * x, np.log(p), label=r"$log(p)$")
+    plt.xlabel("x")
+    plt.grid(False)
+    plt.legend()
     plt.savefig(fname)
     plt.close()
