@@ -112,8 +112,8 @@ def solve_continuity_n(
 
     err = np.float_("inf")
     while err > tol:
+        s = get_s(psi, prev_phi_n, phi_p)
         for j in range(1, node_num - 1):
-            s = get_s(psi, prev_phi_n, phi_p)
             k[j] = m_n[j] * np.exp(psi[j])
             q[j] = -(phi_p[j] * s[j])
             f[j] = -s[j]
@@ -144,8 +144,8 @@ def solve_continuity_p(
 
     err = np.float_("inf")
     while err > tol:
+        s = get_s(psi, phi_n, prev_phi_p)
         for j in range(1, node_num - 1):
-            s = get_s(psi, phi_n, prev_phi_p)
             k[j] = m_p[j] * np.exp(-psi[j])
             q[j] = -(phi_n[j] * s[j])
             f[j] = -s[j]
