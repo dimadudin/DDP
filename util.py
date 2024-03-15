@@ -5,7 +5,7 @@ from consts import t_n, t_p, n_1, p_1
 
 
 def solve_ddp(
-    tol: float,
+    tol: np.float_,
     x: np.ndarray,
     psi_0: np.ndarray,
     phi_n_0: np.ndarray,
@@ -30,11 +30,11 @@ def solve_ddp(
         new_psi, err_psi = solve_poisson(x, prev_psi, prev_phi_n, prev_phi_p, impurity)
 
         new_phi_n, err_phi_n = solve_continuity_n(
-            x, prev_phi_n, new_psi, m_n, prev_phi_p
+            tol, x, prev_phi_n, new_psi, m_n, prev_phi_p
         )
 
         new_phi_p, err_phi_p = solve_continuity_p(
-            x, prev_phi_p, new_psi, m_p, new_phi_n
+            tol, x, prev_phi_p, new_psi, m_p, new_phi_n
         )
 
         error = np.max([err_psi, err_phi_n, err_phi_p])
@@ -94,6 +94,7 @@ def get_s(psi: np.ndarray, phi_n: np.ndarray, phi_p: np.ndarray) -> np.ndarray:
 
 
 def solve_continuity_n(
+    tol: np.float_,
     x: np.ndarray,
     phi_n_0: np.ndarray,
     psi: np.ndarray,
@@ -106,18 +107,26 @@ def solve_continuity_n(
     f = np.zeros(node_num)
     f[0] = phi_n_0[0]
     f[-1] = phi_n_0[-1]
-    for j in range(1, node_num - 1):
-        s = get_s(psi, phi_n_0, phi_p)
-        k[j] = m_n[j] * exp(psi[j])
-        q[j] = -(phi_p[j] * s[j])
-        f[j] = -s[j]
-    new_phi_n = solve_differential_equation(x, k, q, f)
-    err = np.linalg.norm(new_phi_n - phi_n_0)
-    print(f"n_continuity {err}")
+
+    prev_phi_n = np.copy(phi_n_0)
+    new_phi_n = np.zeros(node_num)
+
+    err = np.float_("inf")
+    while err > tol:
+        for j in range(1, node_num - 1):
+            s = get_s(psi, prev_phi_n, phi_p)
+            k[j] = m_n[j] * exp(psi[j])
+            q[j] = -(phi_p[j] * s[j])
+            f[j] = -s[j]
+        new_phi_n = solve_differential_equation(x, k, q, f)
+        err = np.linalg.norm(new_phi_n - prev_phi_n)
+        print(f"n_continuity {err}")
+        prev_phi_n = new_phi_n
     return new_phi_n, err
 
 
 def solve_continuity_p(
+    tol: np.float_,
     x: np.ndarray,
     phi_p_0: np.ndarray,
     psi: np.ndarray,
@@ -130,14 +139,21 @@ def solve_continuity_p(
     f = np.zeros(node_num)
     f[0] = phi_p_0[0]
     f[-1] = phi_p_0[-1]
-    for j in range(1, node_num - 1):
-        s = get_s(psi, phi_n, phi_p_0)
-        k[j] = m_p[j] * exp(-psi[j])
-        q[j] = -(phi_n[j] * s[j])
-        f[j] = -s[j]
-    new_phi_p = solve_differential_equation(x, k, q, f)
-    err = np.linalg.norm(new_phi_p - phi_p_0)
-    print(f"p_continuity {err}")
+
+    prev_phi_p = np.copy(phi_p_0)
+    new_phi_p = np.zeros(node_num)
+
+    err = np.float_("inf")
+    while err > tol:
+        for j in range(1, node_num - 1):
+            s = get_s(psi, phi_n, prev_phi_p)
+            k[j] = m_p[j] * exp(-psi[j])
+            q[j] = -(phi_n[j] * s[j])
+            f[j] = -s[j]
+        new_phi_p = solve_differential_equation(x, k, q, f)
+        err = np.linalg.norm(new_phi_p - prev_phi_p)
+        print(f"p_continuity {err}")
+        prev_phi_p = new_phi_p
     return new_phi_p, err
 
 

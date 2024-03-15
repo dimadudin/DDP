@@ -29,7 +29,7 @@ n_1 = np.float_(n_1)
 p_1 = np.float_(p_1)
 
 new_psi, new_phi_n, new_phi_p = solve_ddp(
-    1e-5, x, psi, phi_n, phi_p, impurity_func, m_n, m_p
+    np.float_(1e-5), x, psi, phi_n, phi_p, impurity_func, m_n, m_p
 )
 
 plot(l_g * x, n_i * new_phi_n * np.exp(new_psi), "n", "res/n_e.png")

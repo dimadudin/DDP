@@ -53,7 +53,7 @@ for j in range(node_number):
     else:
         m_p[j] = 450 / mu_0
 
-voltage = 0.465 / phi_t
+voltage = -3.75 / phi_t
 
 psi = [0.0] * node_number
 psi[0] = log(impurity_func[0] / 2 + sqrt((impurity_func[0] / 2) ** 2 + 1)) + voltage
