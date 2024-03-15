@@ -218,23 +218,20 @@ def get_densities(psi, phi_n, phi_p):
 def get_currents(x, psi, phi_n, phi_p):
     node_num = len(x)
 
-    n, p = get_densities(psi, phi_n, phi_p)
-    _, n_phi_n, n_phi_p = get_pot_phis(psi, phi_n, phi_p)
-
     dphi_n = np.zeros(node_num)
     dphi_p = np.zeros(node_num)
     for j in range(node_num - 1):
         h = l_g * (x[j + 1] - x[j])
-        dphi_n[j] = (n_phi_n[j + 1] - n_phi_n[j]) / h
-        dphi_p[j] = (n_phi_p[j + 1] - n_phi_p[j]) / h
+        dphi_n[j] = (phi_n[j + 1] - phi_n[j]) / h
+        dphi_p[j] = (phi_p[j + 1] - phi_p[j]) / h
     h = l_g * (x[node_num - 1] - x[node_num - 2])
-    dphi_n[node_num - 1] = (n_phi_n[node_num - 1] - n_phi_n[node_num - 2]) / h
-    dphi_p[node_num - 1] = (n_phi_p[node_num - 1] - n_phi_p[node_num - 2]) / h
+    dphi_n[node_num - 1] = (phi_n[node_num - 1] - phi_n[node_num - 2]) / h
+    dphi_p[node_num - 1] = (phi_p[node_num - 1] - phi_p[node_num - 2]) / h
 
     j_n = np.zeros(node_num)
     j_p = np.zeros(node_num)
-    j_n = -q_e * m_n * n * dphi_n
-    j_p = -q_e * m_p * p * dphi_p
+    j_n = q_e * m_n * phi_t * n_i * np.exp(psi) * dphi_n
+    j_p = -q_e * m_p * phi_t * n_i * np.exp(-psi) * dphi_p
 
     J = np.zeros(node_num)
     J = j_n + j_p
