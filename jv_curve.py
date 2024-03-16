@@ -1,7 +1,14 @@
 import numpy as np
 
+from getters import get_currents
 from consts import get_psi_bc, get_phi_n_bc, get_phi_p_bc
-from plotting import plot_currents, plot_densities, plot_log_densities, plot_potential
+from plotting import (
+    plot_currents,
+    plot_densities,
+    plot_log_densities,
+    plot_potential,
+    plot_jv,
+)
 from solve_ddp import solve_ddp
 
 
@@ -73,5 +80,9 @@ def jv_curve(tol, x, impurity_func, voltages):
             x, new_psi, new_phi_n, new_phi_p, f"res/pot{i}.png", rf"$V_a = {v_a} V$"
         )
 
+        _, _, j_ = get_currents(x, new_psi, new_phi_n, new_phi_p)
+        j[i - 1] = j_[node_number // 2]
         prev_psi, prev_phi_n, prev_phi_p = new_psi, new_phi_n, new_phi_p
         i += 1
+
+        plot_jv(j, voltages, "res/jv.png", "JV")
