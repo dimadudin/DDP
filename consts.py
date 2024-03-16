@@ -53,25 +53,22 @@ for j in range(node_number):
     else:
         m_p[j] = 450 / mu_0
 
-voltage = 0.5 / phi_t
 
-psi = zeros(node_number)
-psi[0] = log(impurity_func[0] / 2 + sqrt((impurity_func[0] / 2) ** 2 + 1)) + voltage
-psi[-1] = log(impurity_func[-1] / 2 + sqrt((impurity_func[-1] / 2) ** 2 + 1))
-d_psi = (psi[-1] - psi[0]) / node_number
-for j in range(1, node_number - 1):
-    psi[j] = psi[j - 1] + d_psi
+def get_psi_bc(v_a):
+    psi_o = log(impurity_func[0] / 2 + sqrt((impurity_func[0] / 2) ** 2 + 1)) + (
+        v_a / phi_t
+    )
+    psi_l = log(impurity_func[-1] / 2 + sqrt((impurity_func[-1] / 2) ** 2 + 1))
+    return psi_o, psi_l
 
-phi_n = zeros(node_number)
-phi_n[0] = exp(-voltage)
-phi_n[-1] = 1.0
-d_phi_n = (phi_n[-1] - phi_n[0]) / node_number
-for j in range(1, node_number - 1):
-    phi_n[j] = phi_n[j - 1] + d_phi_n
 
-phi_p = zeros(node_number)
-phi_p[0] = exp(voltage)
-phi_p[-1] = 1.0
-d_phi_p = (phi_p[-1] - phi_p[0]) / node_number
-for j in range(1, node_number - 1):
-    phi_p[j] = phi_p[j - 1] + d_phi_p
+def get_phi_n_bc(v_a):
+    phi_n_o = exp(-(v_a / phi_t))
+    phi_n_l = 1.0
+    return phi_n_o, phi_n_l
+
+
+def get_phi_p_bc(v_a):
+    phi_p_o = exp(v_a / phi_t)
+    phi_p_l = 1.0
+    return phi_p_o, phi_p_l

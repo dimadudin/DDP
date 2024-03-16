@@ -3,7 +3,7 @@ from getters import get_xi, get_pot_phis, get_densities, get_currents, get_M
 from numpy import log
 
 
-def plot_potential(x, psi, phi_n, phi_p, fname):
+def plot_potential(x, psi, phi_n, phi_p, fname, title):
     xi = get_xi(x)
     n_psi, n_phi_n, n_phi_p = get_pot_phis(psi, phi_n, phi_p)
 
@@ -15,11 +15,12 @@ def plot_potential(x, psi, phi_n, phi_p, fname):
     plt.xlabel("x")
     plt.grid(False)
     plt.legend()
+    plt.title(title)
     plt.savefig(fname)
     plt.close()
 
 
-def plot_densities(x, psi, phi_n, phi_p, fname):
+def plot_densities(x, psi, phi_n, phi_p, fname, title):
     xi = get_xi(x)
     n, p = get_densities(psi, phi_n, phi_p)
     plt.figure()
@@ -29,11 +30,12 @@ def plot_densities(x, psi, phi_n, phi_p, fname):
     plt.xlabel("x")
     plt.grid(False)
     plt.legend()
+    plt.title(title)
     plt.savefig(fname)
     plt.close()
 
 
-def plot_currents(x, psi, phi_n, phi_p, fname):
+def plot_currents(x, psi, phi_n, phi_p, fname, title):
     xi = get_xi(x)
     j_n, j_p, J = get_currents(x, psi, phi_n, phi_p)
     plt.figure()
@@ -44,11 +46,12 @@ def plot_currents(x, psi, phi_n, phi_p, fname):
     plt.xlabel("x")
     plt.grid(False)
     plt.legend()
+    plt.title(title)
     plt.savefig(fname)
     plt.close()
 
 
-def plot_log_densities(x, psi, phi_n, phi_p, fname):
+def plot_log_densities(x, psi, phi_n, phi_p, fname, title):
     xi = get_xi(x)
     n, p = get_densities(psi, phi_n, phi_p)
     plt.figure()
@@ -58,5 +61,6 @@ def plot_log_densities(x, psi, phi_n, phi_p, fname):
     plt.xlabel("x")
     plt.grid(False)
     plt.legend()
+    plt.title(title)
     plt.savefig(fname)
     plt.close()
